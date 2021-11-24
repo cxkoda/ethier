@@ -153,3 +153,30 @@ func (s *Signer) SignWithNonce(buf []byte) ([]byte, [32]byte, error) {
 func (s *Signer) SignAddress(addr common.Address) ([]byte, error) {
 	return s.CompactSign(addr.Bytes())
 }
+
+// toEthSignedMessageHash converts a given message hash to conform to the
+// signed data standard according to EIP-191. See also OpenZeppelin's
+// ECDSA.toEthSignedMessageHash
+func toEthSignedMessageHash(hash []byte) ([]byte, error) {
+	if n, err := rand.Read(hash[:]); n != 32 || err != nil {
+		return nil, fmt.Errorf("toEthSignedMessageHash expected 32 bytes got %d with err %v", n, err)
+	}
+	prefix := []byte("\x19Ethereum Signed Message:\n32")
+	return crypto.Keccak256(append(prefix, hash...)), nil
+}
+
+// A convenience wrapper for toEthSignedMessageHash(s.Sign(buf)) to generate
+// EIP-191 conform signatures.
+func (s *Signer) EthSign(buf []byte) ([]byte, error) {
+	hash, err := toEthSignedMessageHash(crypto.Keccak256(buf))
+	if err != nil {
+		return nil, err
+	}
+
+	return s.RawSign(hash)
+}
+
+// EthSignAddress is a convenience wrapper for s.EthSign(addr.Bytes()).
+func (s *Signer) EthSignAddress(addr common.Address) ([]byte, error) {
+	return s.EthSign(addr.Bytes())
+}

@@ -21,6 +21,7 @@ func init() {
 	}
 
 	rootCmd.AddCommand(signCmd)
+	signCmd.PersistentFlags().Bool("eip-191", false, "Produce EIP-191 conform signatures")
 
 	var signAddrCmd = &cobra.Command{
 		Use:   "addresses",
@@ -38,7 +39,7 @@ type SignedAddress struct {
 
 // sign generates a new signer (if none is provided) and signs a given message
 // TODO given signers
-func signAddresses(_ *cobra.Command, args []string) (retErr error) {
+func signAddresses(cmd *cobra.Command, args []string) (retErr error) {
 	// pwd, err := os.Getwd()
 	// if err != nil {
 	// 	return fmt.Errorf("os.Getwd(): %v", err)
@@ -49,6 +50,11 @@ func signAddresses(_ *cobra.Command, args []string) (retErr error) {
 			retErr = fmt.Errorf("signing: %w", retErr) // TODO What's %w
 		}
 	}()
+
+	useEip191, err := cmd.Flags().GetBool("eip-191")
+	if err != nil {
+		log.Fatalf("Getting flag: %v", err)
+	}
 
 	signer, err := eth.NewSigner(256)
 	if err != nil {
@@ -64,11 +70,17 @@ func signAddresses(_ *cobra.Command, args []string) (retErr error) {
 
 	log.Printf("Signer: %v\n\n", signer)
 
-	var signedAddresses []SignedAddress
+	var signAddress func(common.Address) ([]byte, error)
+	if useEip191 {
+		signAddress = signer.EthSignAddress
+	} else {
+		signAddress = signer.SignAddress
+	}
 
+	var signedAddresses []SignedAddress
 	for _, address := range addresses {
 		addr := common.HexToAddress(address)
-		sig, err := signer.SignAddress(addr)
+		sig, err := signAddress(addr)
 		if err != nil {
 			log.Fatalf("Signing address %v: %v", address, err)
 		}
