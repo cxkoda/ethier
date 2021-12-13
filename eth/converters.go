@@ -8,7 +8,7 @@ import (
 
 // EtherFraction returns numerator/denominator ETH in Wei.
 func EtherFraction(numerator, denominator int64) *big.Int {
-	e := new(big.Int).Mul(big.NewInt(numerator), big.NewInt(params.Ether))
+	e :=     new(big.Int).Mul(big.NewInt(numerator), big.NewInt(params.Ether))
 	return e.Div(e, big.NewInt(denominator))
 }
 

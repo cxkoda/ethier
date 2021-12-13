@@ -23,8 +23,7 @@ library SignatureChecker {
     function validateSignature(
         EnumerableSet.AddressSet storage signers,
         bytes memory data,
-        bytes32 nonce,
-        bytes calldata signature,
+        bytes32 nonce,     bytes calldata signature,
         mapping(bytes32 => bool) storage usedNonces
     ) internal {
         require(!usedNonces[nonce], "SignatureChecker: Nonce already used");
